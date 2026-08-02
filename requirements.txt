@@ -1,0 +1,46 @@
+# OpsPilot AI - Enterprise AI Operations & Incident Resolution Platform
+# Author: Nivesh Kumar Meena
+# Copyright (c) 2026 Nivesh Kumar Meena. All Rights Reserved.
+
+# Web Framework & API
+fastapi>=0.110.0
+uvicorn[standard]>=0.28.0
+pydantic>=2.6.0
+pydantic-settings>=2.2.0
+python-multipart>=0.0.9
+
+# Database & ORM
+sqlalchemy>=2.0.28
+asyncpg>=0.29.0
+psycopg2-binary>=2.9.9
+alembic>=1.13.1
+pgvector>=0.2.5
+redis>=5.0.3
+
+# AI & Agentic Framework
+langgraph>=0.0.30
+langchain>=0.1.13
+langchain-core>=0.1.33
+langchain-community>=0.0.29
+langchain-openai>=0.0.8
+langsmith>=0.1.31
+numpy>=1.26.0
+
+# Security & Authentication
+pyjwt>=2.8.0
+passlib[bcrypt]>=1.7.4
+bcrypt>=4.1.2
+python-jose[cryptography]>=3.3.0
+
+# HTTP & Integrations
+httpx>=0.27.0
+requests>=2.31.0
+aiohttp>=3.9.3
+
+# Observability & Metrics
+prometheus-client>=0.20.0
+
+# Testing
+pytest>=8.1.1
+pytest-asyncio>=0.23.6
+pytest-cov>=4.1.0
