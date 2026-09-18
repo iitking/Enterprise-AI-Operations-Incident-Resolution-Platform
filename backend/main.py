@@ -1,0 +1,92 @@
+"""
+OpsPilot AI - Enterprise AI Operations & Incident Resolution Platform
+Author: Nivesh Kumar Meena
+Copyright (c) 2026 Nivesh Kumar Meena. All Rights Reserved.
+"""
+
+import os
+from contextlib import asynccontextmanager
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse, JSONResponse
+
+from backend.config import settings
+from backend.models.database import engine, Base
+from backend.api.auth_routes import router as auth_router
+from backend.api.incident_routes import router as incident_router, simulate_payment_api_incident
+from backend.api.approval_routes import router as approval_router
+from backend.api.webhook_routes import router as webhook_router
+from backend.api.rag_routes import router as rag_router
+from backend.api.service_routes import router as service_router
+from backend.api.analytics_routes import router as analytics_router
+from backend.tools.mcp_server import mcp_server
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Create DB schema tables
+    Base.metadata.create_all(bind=engine)
+    # Automatically seed the benchmark P1 payment-api incident on startup
+    try:
+        simulate_payment_api_incident()
+    except Exception as e:
+        print(f"Initial seed warning: {e}")
+    yield
+
+app = FastAPI(
+    title=settings.APP_NAME,
+    description=(
+        "OpsPilot AI is an autonomous multi-agent AI platform for enterprise incident investigation, "
+        "root-cause analysis, workflow automation, and human-approved remediation.\n\n"
+        "**Author & Creator:** Nivesh Kumar Meena\n"
+        "**Copyright © 2026 Nivesh Kumar Meena. All Rights Reserved.**"
+    ),
+    version="1.0.0",
+    lifespan=lifespan
+)
+
+# CORS Middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Register API Routers
+app.include_router(auth_router)
+app.include_router(incident_router)
+app.include_router(approval_router)
+app.include_router(webhook_router)
+app.include_router(rag_router)
+app.include_router(service_router)
+app.include_router(analytics_router)
+
+@app.get("/health")
+def health_check():
+    return {
+        "status": "healthy",
+        "app": settings.APP_NAME,
+        "author": settings.PROJECT_AUTHOR,
+        "environment": settings.APP_ENV,
+        "version": "1.0.0"
+    }
+
+@app.get("/api/mcp/tools")
+def get_mcp_tools():
+    """MCP endpoint returning tool schema declarations."""
+    return mcp_server.list_tools()
+
+# Mount frontend if build directory exists
+frontend_dist_path = os.path.join(os.path.dirname(__file__), "..", "frontend", "dist")
+frontend_static_path = os.path.join(os.path.dirname(__file__), "..", "frontend", "static")
+
+if os.path.exists(frontend_dist_path):
+    app.mount("/", StaticFiles(directory=frontend_dist_path, html=True), name="frontend")
+elif os.path.exists(frontend_static_path):
+    app.mount("/", StaticFiles(directory=frontend_static_path, html=True), name="frontend")
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("backend.main:app", host="0.0.0.0", port=settings.APP_PORT, reload=True)
