@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OpsPilot AI - Enterprise AI Operations Command Center</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            },
+            dark: {
+              900: '#0b0f19',
+              800: '#111827',
+              700: '#1f2937',
+              600: '#374151'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @keyframes pulse-fast {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.05); }
+    }
+    .live-pulse {
+      animation: pulse-fast 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #111827;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #374151;
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body class="bg-[#0b0f19] text-gray-100 font-sans antialiased min-h-screen flex flex-col custom-scrollbar">
+
+  <!-- Top Navigation Bar -->
+  <header class="border-b border-gray-800 bg-[#0e1424] px-6 py-3.5 sticky top-0 z-50 shadow-md">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-9 h-9 rounded-lg bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center shadow-lg shadow-indigo-500/30">
+          <i data-lucide="shield-alert" class="w-5 h-5 text-white"></i>
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <span class="text-xl font-bold tracking-tight bg-gradient-to-r from-white via-gray-200 to-indigo-300 bg-clip-text text-transparent">OpsPilot AI</span>
+            <span class="px-2 py-0.5 text-xs font-semibold rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">v1.0.0</span>
+          </div>
+          <p class="text-xs text-gray-400">Enterprise AI Operations & Incident Resolution Platform &bull; By <span class="text-indigo-400 font-medium">Nivesh Kumar Meena</span></p>
+        </div>
+      </div>
+
+      <!-- System Status Pills & Global Actions -->
+      <div class="flex items-center space-x-4">
+        <div class="hidden md:flex items-center space-x-3 text-xs bg-gray-900/80 px-3 py-1.5 rounded-full border border-gray-800">
+          <div class="flex items-center space-x-1.5">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 live-pulse"></span>
+            <span class="text-gray-300">LangGraph: <strong class="text-emerald-400">Active</strong></span>
+          </div>
+          <span class="text-gray-600">|</span>
+          <div class="flex items-center space-x-1.5" title="Local In-Memory Observability Active. Optional: add LANGCHAIN_API_KEY in .env for Cloud Sync">
+            <span class="w-2 h-2 rounded-full bg-indigo-400"></span>
+            <span class="text-gray-300">Tracing: <strong class="text-indigo-300">Local Engine</strong></span>
+          </div>
+          <span class="text-gray-600">|</span>
+          <div class="flex items-center space-x-1.5">
+            <span class="w-2 h-2 rounded-full bg-blue-400"></span>
+            <span class="text-gray-300">pgvector RAG: <strong class="text-blue-300">Loaded</strong></span>
+          </div>
+        </div>
+
+        <button onclick="triggerSimulateP1()" id="btn-simulate" class="flex items-center space-x-2 px-3.5 py-1.5 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white text-xs font-semibold rounded-lg shadow-md shadow-red-900/30 transition-all">
+          <i data-lucide="zap" class="w-4 h-4"></i>
+          <span>Simulate P1 Incident</span>
+        </button>
+
+        <button onclick="fetchIncidents()" class="p-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 transition-colors" title="Refresh Telemetry">
+          <i data-lucide="refresh-cw" class="w-4 h-4" id="refresh-icon"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Metric KPI Cards -->
+  <section class="px-6 py-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 bg-[#0d1220]/60 border-b border-gray-800/80">
+    <div class="bg-gray-900/90 border border-gray-800 p-4 rounded-xl flex items-center justify-between">
+      <div>
+        <p class="text-xs font-medium text-gray-400 uppercase tracking-wider">Active Incidents</p>
+        <div class="flex items-baseline space-x-2 mt-1">
+          <span class="text-2xl font-bold text-red-400" id="kpi-active">1</span>
+          <span class="text-xs font-medium text-red-400/80 bg-red-950/60 px-1.5 py-0.5 rounded border border-red-800/40">1 P1 Critical</span>
+        </div>
+      </div>
+      <div class="w-10 h-10 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400">
+        <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+      </div>
+    </div>
+
+    <div class="bg-gray-900/90 border border-gray-800 p-4 rounded-xl flex items-center justify-between">
+      <div>
+        <p class="text-xs font-medium text-gray-400 uppercase tracking-wider">Resolved Today</p>
+        <div class="flex items-baseline space-x-2 mt-1">
+          <span class="text-2xl font-bold text-emerald-400" id="kpi-resolved">18</span>
+          <span class="text-xs font-medium text-emerald-400/80 bg-emerald-950/60 px-1.5 py-0.5 rounded border border-emerald-800/40">100% SRE verified</span>
+        </div>
+      </div>
+      <div class="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+        <i data-lucide="check-circle-2" class="w-5 h-5"></i>
+      </div>
+    </div>
+
+    <div class="bg-gray-900/90 border border-gray-800 p-4 rounded-xl flex items-center justify-between">
+      <div>
+        <p class="text-xs font-medium text-gray-400 uppercase tracking-wider">AI Root Cause Accuracy</p>
+        <div class="flex items-baseline space-x-2 mt-1">
+          <span class="text-2xl font-bold text-indigo-400" id="kpi-accuracy">94.2%</span>
+          <span class="text-xs font-medium text-indigo-400/80 bg-indigo-950/60 px-1.5 py-0.5 rounded border border-indigo-800/40">LangSmith Benchmark</span>
+        </div>
+      </div>
+      <div class="w-10 h-10 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+        <i data-lucide="cpu" class="w-5 h-5"></i>
+      </div>
+    </div>
+
+    <div class="bg-gray-900/90 border border-gray-800 p-4 rounded-xl flex items-center justify-between">
+      <div>
+        <p class="text-xs font-medium text-gray-400 uppercase tracking-wider">MTTR Reduction</p>
+        <div class="flex items-baseline space-x-2 mt-1">
+          <span class="text-2xl font-bold text-violet-400">4.8 min</span>
+          <span class="text-xs font-medium text-emerald-400 bg-emerald-950/60 px-1.5 py-0.5 rounded border border-emerald-800/40">-88.5%</span>
+        </div>
+      </div>
+      <div class="w-10 h-10 rounded-lg bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-violet-400">
+        <i data-lucide="trending-down" class="w-5 h-5"></i>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Incident Command Center Workspace -->
+  <main class="flex-1 px-6 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6 max-w-7xl mx-auto w-full">
+
+    <!-- Left Column: Incident List Feed (4 Cols) -->
+    <div class="lg:col-span-4 flex flex-col space-y-4">
+      <div class="flex items-center justify-between">
+        <h2 class="text-sm font-semibold uppercase tracking-wider text-gray-400 flex items-center space-x-2">
+          <i data-lucide="list" class="w-4 h-4 text-indigo-400"></i>
+          <span>Incident Stream</span>
+        </h2>
+        <span class="text-xs text-gray-500" id="incident-count">Loading...</span>
+      </div>
+
+      <div id="incidents-container" class="space-y-3 overflow-y-auto max-h-[720px] custom-scrollbar pr-1">
+        <!-- Injected via JS -->
+      </div>
+    </div>
+
+    <!-- Right Column: Multi-Agent Deep-Dive Workspace (8 Cols) -->
+    <div class="lg:col-span-8 flex flex-col space-y-4">
+
+      <!-- Navigation Tabs -->
+      <div class="flex items-center justify-between border-b border-gray-800 pb-2">
+        <div class="flex space-x-2" id="nav-tabs">
+          <button onclick="switchTab('tab-investigation')" id="tab-btn-investigation" class="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-indigo-600 text-white flex items-center space-x-1.5">
+            <i data-lucide="microscope" class="w-3.5 h-3.5"></i>
+            <span>Investigation & Root Cause</span>
+          </button>
+          <button onclick="switchTab('tab-hitl')" id="tab-btn-hitl" class="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-gray-800 text-gray-400 hover:text-white flex items-center space-x-1.5">
+            <i data-lucide="shield-check" class="w-3.5 h-3.5 text-amber-400"></i>
+            <span>Human Approval Gate</span>
+          </button>
+          <button onclick="switchTab('tab-postmortem')" id="tab-btn-postmortem" class="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-gray-800 text-gray-400 hover:text-white flex items-center space-x-1.5">
+            <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
+            <span>Postmortem</span>
+          </button>
+          <button onclick="switchTab('tab-langsmith')" id="tab-btn-langsmith" class="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-gray-800 text-gray-400 hover:text-white flex items-center space-x-1.5">
+            <i data-lucide="activity" class="w-3.5 h-3.5 text-emerald-400"></i>
+            <span>LangSmith Trace</span>
+          </button>
+        </div>
+
+        <span class="text-xs text-gray-500 font-mono" id="active-inc-id">INC-1042</span>
+      </div>
+
+      <!-- Tab 1: Investigation & Multi-Agent Findings -->
+      <div id="tab-investigation" class="space-y-4">
+
+        <!-- Autonomous Synthesis Banner -->
+        <div class="bg-gradient-to-r from-gray-900 via-indigo-950/40 to-gray-900 border border-indigo-900/50 rounded-xl p-5 shadow-lg">
+          <div class="flex items-start justify-between">
+            <div class="flex items-start space-x-3">
+              <div class="p-2.5 bg-indigo-600/20 border border-indigo-500/30 rounded-lg text-indigo-400 mt-0.5">
+                <i data-lucide="brain-circuit" class="w-6 h-6"></i>
+              </div>
+              <div>
+                <div class="flex items-center space-x-2">
+                  <h3 class="text-base font-bold text-white">Synthesized Root Cause</h3>
+                  <span class="px-2 py-0.5 text-xs font-bold rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" id="detail-confidence">94% Confidence</span>
+                </div>
+                <p class="text-sm text-gray-300 mt-1 leading-relaxed" id="detail-root-cause">
+                  Payment API v2.4.1 query regression exhausted HikariCP database connection pool, causing cascading PostgreSQL connection timeouts.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Correlated Evidence Badges -->
+          <div class="mt-4 pt-3 border-t border-gray-800/80 flex flex-wrap gap-2 text-xs" id="detail-evidence-list">
+            <!-- Dynamic Badges -->
+          </div>
+        </div>
+
+        <!-- Multi-Agent Parallel Findings Accordions/Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+          <!-- Log Investigation Agent Card -->
+          <div class="bg-gray-900/90 border border-gray-800 rounded-xl p-4">
+            <div class="flex items-center justify-between pb-2 border-b border-gray-800">
+              <span class="text-xs font-bold text-amber-400 flex items-center space-x-1.5">
+                <i data-lucide="terminal" class="w-4 h-4"></i>
+                <span>Log Investigation Agent</span>
+              </span>
+              <span class="text-[11px] text-gray-500">73% PostgreSQL Timeouts</span>
+            </div>
+            <div class="mt-2.5 text-xs text-gray-300 font-mono bg-black/50 p-2.5 rounded-lg border border-gray-800/80 overflow-x-auto" id="card-logs">
+              psycopg2.OperationalError: PostgreSQL connection timeout (765 errors)
+            </div>
+          </div>
+
+          <!-- Metrics Agent Card -->
+          <div class="bg-gray-900/90 border border-gray-800 rounded-xl p-4">
+            <div class="flex items-center justify-between pb-2 border-b border-gray-800">
+              <span class="text-xs font-bold text-rose-400 flex items-center space-x-1.5">
+                <i data-lucide="bar-chart-2" class="w-4 h-4"></i>
+                <span>Metrics Agent</span>
+              </span>
+              <span class="text-[11px] text-gray-500">Latency: 4200ms (23x Spike)</span>
+            </div>
+            <div class="mt-2.5 text-xs text-gray-300 font-mono bg-black/50 p-2.5 rounded-lg border border-gray-800/80 overflow-x-auto" id="card-metrics">
+              DB Connection Pool: 20/20 (100% Saturation) | DB Host CPU: 92.4%
+            </div>
+          </div>
+
+          <!-- Code & Deployment Agent Card -->
+          <div class="bg-gray-900/90 border border-gray-800 rounded-xl p-4">
+            <div class="flex items-center justify-between pb-2 border-b border-gray-800">
+              <span class="text-xs font-bold text-sky-400 flex items-center space-x-1.5">
+                <i data-lucide="git-pull-request" class="w-4 h-4"></i>
+                <span>Code & Deployment Agent</span>
+              </span>
+              <span class="text-[11px] text-gray-500">Commit: a8f3b9c</span>
+            </div>
+            <div class="mt-2.5 text-xs text-gray-300 font-mono bg-black/50 p-2.5 rounded-lg border border-gray-800/80 overflow-x-auto" id="card-github">
+              v2.4.1 deployed 5m before alert: "Optimize payment query" in queries.py
+            </div>
+          </div>
+
+          <!-- RAG Runbook Agent Card -->
+          <div class="bg-gray-900/90 border border-gray-800 rounded-xl p-4">
+            <div class="flex items-center justify-between pb-2 border-b border-gray-800">
+              <span class="text-xs font-bold text-emerald-400 flex items-center space-x-1.5">
+                <i data-lucide="book-open" class="w-4 h-4"></i>
+                <span>RAG Knowledge Retrieval</span>
+              </span>
+              <span class="text-[11px] text-gray-500">Match: INC-097 Postmortem</span>
+            </div>
+            <div class="mt-2.5 text-xs text-gray-300 font-mono bg-black/50 p-2.5 rounded-lg border border-gray-800/80 overflow-x-auto" id="card-rag">
+              Retrieved Runbook: DB Pool Exhaustion. Precedent resolution: Rollback deployment.
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Workflow Execution Timeline -->
+        <div class="bg-gray-900/90 border border-gray-800 rounded-xl p-4">
+          <h4 class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3 flex items-center space-x-2">
+            <i data-lucide="clock" class="w-4 h-4 text-indigo-400"></i>
+            <span>LangGraph Multi-Agent Execution Steps</span>
+          </h4>
+          <div class="space-y-2 text-xs" id="execution-steps-list">
+            <!-- Timeline items injected via JS -->
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Tab 2: Human-in-the-Loop Approval Gate -->
+      <div id="tab-hitl" class="space-y-4 hidden">
+        <div class="bg-amber-950/20 border border-amber-600/40 rounded-xl p-6 shadow-xl">
+          <div class="flex items-start space-x-4">
+            <div class="p-3 bg-amber-500/20 border border-amber-500/30 rounded-xl text-amber-400">
+              <i data-lucide="shield-alert" class="w-8 h-8"></i>
+            </div>
+            <div class="flex-1">
+              <div class="flex items-center space-x-3">
+                <h3 class="text-lg font-bold text-white">Production Safety Gate: Approval Required</h3>
+                <span class="px-2.5 py-0.5 text-xs font-bold rounded bg-rose-600 text-white uppercase tracking-wider">HIGH RISK</span>
+              </div>
+              <p class="text-sm text-gray-300 mt-2">
+                OpsPilot AI policy engine identified an autonomous remediation for this incident.
+                Due to enterprise policy safety principles, executing a production rollback requires explicit human approval.
+              </p>
+
+              <!-- Proposal Specifications -->
+              <div class="mt-4 bg-gray-900/90 border border-gray-800 rounded-lg p-4 grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-mono">
+                <div>
+                  <span class="text-gray-500 block">Proposed Action:</span>
+                  <span class="text-white font-bold text-sm">Rollback Deployment</span>
+                </div>
+                <div>
+                  <span class="text-gray-500 block">Target Service & Version:</span>
+                  <span class="text-amber-300 font-bold text-sm">payment-api v2.4.1 &rarr; v2.4.0</span>
+                </div>
+                <div>
+                  <span class="text-gray-500 block">Confidence / Expected Impact:</span>
+                  <span class="text-emerald-400 font-bold text-sm">94% / Restores Error Rate to &lt;0.5%</span>
+                </div>
+              </div>
+
+              <!-- Action Buttons -->
+              <div class="mt-6 flex items-center space-x-3" id="approval-action-area">
+                <button onclick="submitApproval('approved')" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-lg shadow-lg shadow-emerald-900/40 flex items-center space-x-2 transition-all">
+                  <i data-lucide="check" class="w-4 h-4"></i>
+                  <span>Approve & Execute Rollback</span>
+                </button>
+                <button onclick="submitApproval('rejected')" class="px-5 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-300 font-semibold text-xs rounded-lg border border-gray-700 transition-all">
+                  <span>Reject Action</span>
+                </button>
+                <span class="text-xs text-gray-400 italic">Logged by SRE: <strong>Nivesh Kumar Meena</strong></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 3: Postmortem Document -->
+      <div id="tab-postmortem" class="space-y-4 hidden">
+        <div class="bg-gray-900/90 border border-gray-800 rounded-xl p-6 text-sm">
+          <div class="border-b border-gray-800 pb-4 mb-4 flex justify-between items-start">
+            <div>
+              <h3 class="text-lg font-bold text-white" id="pm-title">Postmortem: Production Outage on payment-api</h3>
+              <p class="text-xs text-gray-400 mt-1">Generated autonomously by <span class="text-indigo-400">OpsPilot AI</span> &bull; Author: <strong>Nivesh Kumar Meena</strong></p>
+            </div>
+            <button onclick="window.print()" class="px-3 py-1 bg-gray-800 hover:bg-gray-700 text-xs rounded border border-gray-700 flex items-center space-x-1.5">
+              <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+              <span>Export PDF</span>
+            </button>
+          </div>
+
+          <div class="space-y-4 text-xs text-gray-300 leading-relaxed" id="pm-content">
+            <!-- Dynamic Postmortem injected via JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 4: LangSmith Tracing & Observability -->
+      <div id="tab-langsmith" class="space-y-4 hidden">
+        <div class="bg-gray-900/90 border border-gray-800 rounded-xl p-6 text-xs">
+          <div class="flex items-center justify-between pb-3 border-b border-gray-800">
+            <div class="flex items-center space-x-2">
+              <i data-lucide="activity" class="w-4 h-4 text-indigo-400"></i>
+              <span class="font-bold text-white text-sm">LangSmith Execution Trace</span>
+            </div>
+            <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-mono">Trace ID: ls_84f92a10</span>
+          </div>
+
+          <div class="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3 font-mono">
+            <div class="bg-black/40 p-3 rounded-lg border border-gray-800">
+              <span class="text-gray-500 block text-[11px]">Total Pipeline Latency</span>
+              <span class="text-white text-sm font-bold" id="trace-latency">3.4 seconds</span>
+            </div>
+            <div class="bg-black/40 p-3 rounded-lg border border-gray-800">
+              <span class="text-gray-500 block text-[11px]">Total Tokens Consumed</span>
+              <span class="text-white text-sm font-bold" id="trace-tokens">1,420 tokens ($0.014)</span>
+            </div>
+            <div class="bg-black/40 p-3 rounded-lg border border-gray-800">
+              <span class="text-gray-500 block text-[11px]">Evaluation Score</span>
+              <span class="text-emerald-400 text-sm font-bold">1.0 / 1.0 (PASS)</span>
+            </div>
+          </div>
+
+          <!-- Tracing Engine Callout Box -->
+          <div class="mt-4 p-3 rounded-lg bg-indigo-950/30 border border-indigo-800/40 flex items-start space-x-2.5 text-[11px] text-gray-300">
+            <i data-lucide="info" class="w-4 h-4 text-indigo-400 mt-0.5 flex-shrink-0"></i>
+            <div>
+              <strong class="text-indigo-300 block mb-0.5">Tracing Mode: Local In-Memory Observability Engine (Active)</strong>
+              <span>Every agent run, node latency, and token footprint is recorded directly in memory without requiring external API keys. To additionally stream traces to your remote <strong class="text-white">smith.langchain.com</strong> cloud dashboard, simply add <code class="bg-black/60 px-1 py-0.5 rounded text-amber-300">LANGCHAIN_API_KEY</code> in <code class="text-gray-400">.env</code>.</span>
+            </div>
+          </div>
+
+          <div class="mt-4 pt-4 border-t border-gray-800">
+            <h5 class="text-gray-400 font-bold mb-2">Multi-Agent Trace Hierarchy:</h5>
+            <div class="space-y-1.5 font-mono text-[11px]" id="trace-tree">
+              <div class="p-2 rounded bg-gray-950/60 border border-gray-800 flex justify-between">
+                <span>&bull; opspilot_supervisor [Router]</span>
+                <span class="text-gray-500">120ms</span>
+              </div>
+              <div class="p-2 rounded bg-gray-950/60 border border-gray-800 flex justify-between pl-6">
+                <span>&bull; incident_triage_agent [Classification]</span>
+                <span class="text-gray-500">240ms</span>
+              </div>
+              <div class="p-2 rounded bg-gray-950/60 border border-gray-800 flex justify-between pl-6">
+                <span>&bull; parallel_tools: [search_logs, get_metrics, search_github]</span>
+                <span class="text-gray-500">410ms</span>
+              </div>
+              <div class="p-2 rounded bg-gray-950/60 border border-gray-800 flex justify-between pl-6">
+                <span>&bull; pgvector_retriever [Runbooks & Postmortems]</span>
+                <span class="text-gray-500">95ms</span>
+              </div>
+              <div class="p-2 rounded bg-gray-950/60 border border-gray-800 flex justify-between pl-6">
+                <span>&bull; root_cause_synthesizer [Correlation Engine]</span>
+                <span class="text-gray-500">850ms</span>
+              </div>
+              <div class="p-2 rounded bg-gray-950/60 border border-gray-800 flex justify-between pl-6">
+                <span>&bull; human_in_the_loop_breakpoint [Interrupt Gate]</span>
+                <span class="text-amber-400">Awaiting SRE</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="mt-auto border-t border-gray-800/80 bg-[#0a0e1a] px-6 py-4 text-center text-xs text-gray-500">
+    <p>
+      <strong>OpsPilot AI</strong> &mdash; Enterprise AI Operations & Incident Resolution Platform.
+      Created and authored by <span class="text-indigo-400 font-medium">Nivesh Kumar Meena</span>.
+      All Rights Reserved &copy; 2026.
+    </p>
+  </footer>
+
+  <!-- Interactive JavaScript Logic -->
+  <script>
+    let currentIncidentId = null;
+    let incidentsData = [];
+
+    async function fetchIncidents() {
+      const refreshIcon = document.getElementById('refresh-icon');
+      if (refreshIcon) refreshIcon.classList.add('animate-spin');
+
+      try {
+        const res = await fetch('/api/incidents');
+        incidentsData = await res.json();
+        renderIncidentList(incidentsData);
+
+        if (incidentsData.length > 0) {
+          const targetId = currentIncidentId || incidentsData[0].id;
+          await selectIncident(targetId);
+        }
+      } catch (err) {
+        console.error('Failed to fetch incidents:', err);
+      } finally {
+        if (refreshIcon) refreshIcon.classList.remove('animate-spin');
+      }
+    }
+
+    function renderIncidentList(items) {
+      const container = document.getElementById('incidents-container');
+      const countEl = document.getElementById('incident-count');
+      if (!container) return;
+
+      countEl.innerText = `${items.length} incidents`;
+      container.innerHTML = '';
+
+      items.forEach(inc => {
+        const isSelected = inc.id === currentIncidentId;
+        const card = document.createElement('div');
+        card.className = `p-3.5 rounded-xl border cursor-pointer transition-all ${
+          isSelected 
+            ? 'bg-indigo-950/40 border-indigo-500 shadow-md shadow-indigo-950/50' 
+            : 'bg-gray-900/80 border-gray-800 hover:border-gray-700'
+        }`;
+        card.onclick = () => selectIncident(inc.id);
+
+        const sevBadge = inc.severity === 'P1' 
+          ? '<span class="px-1.5 py-0.5 text-[10px] font-bold rounded bg-red-600 text-white">P1</span>'
+          : '<span class="px-1.5 py-0.5 text-[10px] font-bold rounded bg-amber-600 text-white">P2</span>';
+
+        const statusBadge = inc.status === 'resolved'
+          ? '<span class="text-[11px] text-emerald-400 flex items-center space-x-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span><span>Resolved</span></span>'
+          : '<span class="text-[11px] text-amber-400 flex items-center space-x-1"><span class="w-1.5 h-1.5 rounded-full bg-amber-400 live-pulse"></span><span>Awaiting SRE Approval</span></span>';
+
+        card.innerHTML = `
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+              ${sevBadge}
+              <span class="font-bold text-xs text-white">${inc.incident_number}</span>
+              <span class="text-xs text-gray-400">(${inc.service_name})</span>
+            </div>
+            ${statusBadge}
+          </div>
+          <p class="text-xs text-gray-300 mt-2 line-clamp-1 font-medium">${inc.title}</p>
+          <div class="mt-2 text-[11px] text-gray-500 flex justify-between">
+            <span>Error Rate: ${inc.error_rate}%</span>
+            <span>Latency: ${inc.latency_ms}ms</span>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+      lucide.createIcons();
+    }
+
+    async function selectIncident(id) {
+      currentIncidentId = id;
+      try {
+        const res = await fetch(`/api/incidents/${id}`);
+        const state = await res.json();
+        renderIncidentWorkspace(state);
+      } catch (e) {
+        console.error('Error fetching detail:', e);
+      }
+    }
+
+    function renderIncidentWorkspace(state) {
+      document.getElementById('active-inc-id').innerText = state.incident_number;
+      document.getElementById('detail-confidence').innerText = `${Math.round((state.confidence_score || 0.94) * 100)}% Confidence`;
+      document.getElementById('detail-root-cause').innerText = state.root_cause || "Analyzing evidence...";
+
+      // Evidence Badges
+      const evList = document.getElementById('detail-evidence-list');
+      evList.innerHTML = '';
+      (state.evidence_summary || []).forEach(ev => {
+        const b = document.createElement('span');
+        b.className = 'px-2.5 py-1 rounded-md bg-gray-800 text-gray-300 border border-gray-700 flex items-center space-x-1.5';
+        b.innerHTML = `<i data-lucide="check-circle" class="w-3.5 h-3.5 text-indigo-400"></i><span>${ev}</span>`;
+        evList.appendChild(b);
+      });
+
+      // Cards
+      if (state.logs_result) {
+        document.getElementById('card-logs').innerText = `${state.logs_result.primary_error}\nTotal: ${state.logs_result.total_errors} errors clustered.`;
+      }
+      if (state.metrics_result) {
+        document.getElementById('card-metrics').innerText = `p99 Latency: ${state.metrics_result.p99_latency_ms}ms | Active DB Pool: 20/20 | DB CPU: ${state.metrics_result.database_cpu_percent}%`;
+      }
+      if (state.github_result) {
+        document.getElementById('card-github').innerText = `Version: ${state.github_result.latest_version}\nCommit: ${state.github_result.commit_title}\nModified: ${state.github_result.files_modified.join(', ')}`;
+      }
+      if (state.rag_context && state.rag_context.postmortems) {
+        document.getElementById('card-rag').innerText = `Matched Past Incident: ${state.rag_context.postmortems[0]?.title || 'INC-097'}\nPrecedent: Rollback deployment to restore stability.`;
+      }
+
+      // Steps list
+      const stepsContainer = document.getElementById('execution-steps-list');
+      stepsContainer.innerHTML = '';
+      (state.execution_steps || []).forEach((step, idx) => {
+        const item = document.createElement('div');
+        item.className = 'p-2 rounded bg-black/40 border border-gray-800/80 flex items-center justify-between';
+        item.innerHTML = `
+          <div class="flex items-center space-x-2">
+            <span class="w-4 h-4 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-[10px] font-bold">${idx+1}</span>
+            <span class="text-gray-300">${step}</span>
+          </div>
+          <span class="text-[11px] text-emerald-400 font-mono">COMPLETE</span>
+        `;
+        stepsContainer.appendChild(item);
+      });
+
+      // Approval Button status
+      const actionArea = document.getElementById('approval-action-area');
+      if (state.status === 'resolved') {
+        actionArea.innerHTML = `
+          <div class="p-3 rounded-lg bg-emerald-950/60 border border-emerald-700/50 text-emerald-300 text-xs flex items-center space-x-2">
+            <i data-lucide="check-check" class="w-5 h-5 text-emerald-400"></i>
+            <span><strong>Remediation Executed:</strong> Rolled back to ${state.target_version || 'v2.4.0'}. Incident resolved. Health verified.</span>
+          </div>
+        `;
+      } else {
+        actionArea.innerHTML = `
+          <button onclick="submitApproval('approved')" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-lg shadow-lg shadow-emerald-900/40 flex items-center space-x-2 transition-all">
+            <i data-lucide="check" class="w-4 h-4"></i>
+            <span>Approve & Execute Rollback</span>
+          </button>
+          <button onclick="submitApproval('rejected')" class="px-5 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-300 font-semibold text-xs rounded-lg border border-gray-700 transition-all">
+            <span>Reject Action</span>
+          </button>
+          <span class="text-xs text-gray-400 italic">Logged by SRE: <strong>Nivesh Kumar Meena</strong></span>
+        `;
+      }
+
+      // Postmortem Tab Content
+      if (state.postmortem) {
+        document.getElementById('pm-title').innerText = state.postmortem.title;
+        const pmBody = document.getElementById('pm-content');
+        pmBody.innerHTML = `
+          <p><strong>Incident ID:</strong> ${state.postmortem.incident_number} | <strong>Severity:</strong> ${state.postmortem.severity}</p>
+          <p><strong>Executive Summary:</strong> ${state.postmortem.summary}</p>
+          <p><strong>Root Cause:</strong> ${state.postmortem.root_cause}</p>
+          <p><strong>Customer Impact:</strong> ${state.postmortem.impact_summary}</p>
+          <p><strong>Resolution:</strong> ${state.postmortem.resolution}</p>
+          <div class="mt-3">
+            <strong class="text-white block mb-1">Preventive Actions Checklist:</strong>
+            <ul class="list-disc pl-5 space-y-1 text-gray-400">
+              ${(state.postmortem.preventive_actions || []).map(a => `<li>${a}</li>`).join('')}
+            </ul>
+          </div>
+        `;
+      // Dynamically populate LangSmith Trace Hierarchy
+      if (state.agent_run_logs && state.agent_run_logs.length > 0) {
+        const traceTree = document.getElementById('trace-tree');
+        if (traceTree) {
+          traceTree.innerHTML = '';
+          state.agent_run_logs.forEach(log => {
+            const item = document.createElement('div');
+            item.className = 'p-2 rounded bg-gray-950/60 border border-gray-800 flex justify-between items-center';
+            item.innerHTML = `
+              <span class="text-gray-300 font-mono">&bull; ${log.step}</span>
+              <span class="text-emerald-400 font-mono font-bold">${log.duration_ms}ms</span>
+            `;
+            traceTree.appendChild(item);
+          });
+        }
+      }
+
+      lucide.createIcons();
+    }
+
+    async function submitApproval(decision) {
+      if (!currentIncidentId) return;
+      try {
+        const res = await fetch(`/api/approvals/${currentIncidentId}/decision`, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            decision: decision,
+            approved_by: "Nivesh Kumar Meena",
+            comments: "Rollback authorized after reviewing database query regression in commit a8f3b9c"
+          })
+        });
+        const result = await res.json();
+        await fetchIncidents();
+        switchTab('tab-investigation');
+      } catch (err) {
+        alert("Failed to submit approval: " + err.message);
+      }
+    }
+
+    async function triggerSimulateP1() {
+      const btn = document.getElementById('btn-simulate');
+      btn.disabled = true;
+      btn.innerHTML = `<span class="animate-spin mr-1">&bull;</span> Simulating P1 Outage...`;
+
+      try {
+        const res = await fetch('/api/incidents/simulate-p1', {method: 'POST'});
+        const newInc = await res.json();
+        currentIncidentId = newInc.incident_id;
+        await fetchIncidents();
+        switchTab('tab-investigation');
+      } catch (e) {
+        alert("Simulation error: " + e.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i data-lucide="zap" class="w-4 h-4"></i><span>Simulate P1 Incident</span>`;
+        lucide.createIcons();
+      }
+    }
+
+    function switchTab(tabId) {
+      const allTabs = ['tab-investigation', 'tab-hitl', 'tab-postmortem', 'tab-langsmith'];
+      allTabs.forEach(t => {
+        const el = document.getElementById(t);
+        const btn = document.getElementById(`tab-btn-${t.replace('tab-', '')}`);
+        if (el) el.classList.toggle('hidden', t !== tabId);
+        if (btn) {
+          if (t === tabId) {
+            btn.className = 'px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-indigo-600 text-white flex items-center space-x-1.5';
+          } else {
+            btn.className = 'px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-gray-800 text-gray-400 hover:text-white flex items-center space-x-1.5';
+          }
+        }
+      });
+      lucide.createIcons();
+    }
+
+    // Initial load
+    window.addEventListener('DOMContentLoaded', () => {
+      fetchIncidents();
+      lucide.createIcons();
+    });
+  </script>
+</body>
+</html>
