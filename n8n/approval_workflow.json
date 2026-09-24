@@ -1,0 +1,67 @@
+{
+  "name": "OpsPilot AI - Human Approval Slack Interactive Workflow",
+  "author": "Nivesh Kumar Meena",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "approval-decision",
+        "options": {}
+      },
+      "id": "1",
+      "name": "Slack Interactive Button Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "const payload = typeof $json.body.payload === 'string' ? JSON.parse($json.body.payload) : $json.body;\nconst action = payload.actions ? payload.actions[0].value : 'approved';\nreturn [{ json: { incident_id: payload.callback_id || payload.incident_id, decision: action, approved_by: payload.user ? payload.user.name : 'Nivesh Kumar Meena' } }];"
+      },
+      "id": "2",
+      "name": "Format SRE Decision",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "url": "=http://opspilot-backend:8000/api/webhooks/n8n/approval",
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "id": "3",
+      "name": "Resume OpsPilot LangGraph",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [700, 300]
+    }
+  ],
+  "connections": {
+    "Slack Interactive Button Webhook": {
+      "main": [
+        [
+          {
+            "node": "Format SRE Decision",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format SRE Decision": {
+      "main": [
+        [
+          {
+            "node": "Resume OpsPilot LangGraph",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
