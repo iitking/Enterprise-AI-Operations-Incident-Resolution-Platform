@@ -1,0 +1,68 @@
+{
+  "name": "OpsPilot AI - Incident Ingestion & Triage Trigger",
+  "author": "Nivesh Kumar Meena",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "incident-trigger",
+        "options": {}
+      },
+      "id": "1",
+      "name": "Prometheus Alertmanager Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://opspilot-backend:8000/api/webhooks/alert",
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {}
+      },
+      "id": "2",
+      "name": "OpsPilot Multi-Agent Trigger",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "channel": "#incidents-prod",
+        "text": "=🚨 *Incident Detected:* {{$json.service_name}} - Severity: {{$json.triage_result.severity}} | Autonomous investigation initiated by OpsPilot AI."
+      },
+      "id": "3",
+      "name": "Slack Alert Broadcast",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 1,
+      "position": [700, 300]
+    }
+  ],
+  "connections": {
+    "Prometheus Alertmanager Webhook": {
+      "main": [
+        [
+          {
+            "node": "OpsPilot Multi-Agent Trigger",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpsPilot Multi-Agent Trigger": {
+      "main": [
+        [
+          {
+            "node": "Slack Alert Broadcast",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
