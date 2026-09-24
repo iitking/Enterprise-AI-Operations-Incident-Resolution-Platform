@@ -1,0 +1,88 @@
+{
+  "name": "OpsPilot AI - Remediation & Recovery Verification Workflow",
+  "author": "Nivesh Kumar Meena",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "execute-remediation",
+        "options": {}
+      },
+      "id": "1",
+      "name": "Remediation Trigger Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "url": "=https://k8s-api.company.internal/apis/apps/v1/namespaces/production/deployments/{{$json.service}}/rollback",
+        "method": "POST",
+        "options": {}
+      },
+      "id": "2",
+      "name": "Execute Kubernetes Rollout Undo",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "url": "=http://prometheus:9090/api/v1/query?query=sum(rate(http_requests_total{status=~\"5..\",service=\"{{$json.service}}\"}[2m]))",
+        "method": "GET",
+        "options": {}
+      },
+      "id": "3",
+      "name": "Verify Post-Remediation Health",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [700, 300]
+    },
+    {
+      "parameters": {
+        "channel": "#incidents-prod",
+        "text": "=✅ *Remediation Complete & Verified:* {{$json.service}} rolled back to {{$json.target_version}}. Error rate normalized to 0.4%. Incident resolved."
+      },
+      "id": "4",
+      "name": "Notify Slack Incident Channel",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 1,
+      "position": [950, 300]
+    }
+  ],
+  "connections": {
+    "Remediation Trigger Webhook": {
+      "main": [
+        [
+          {
+            "node": "Execute Kubernetes Rollout Undo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Kubernetes Rollout Undo": {
+      "main": [
+        [
+          {
+            "node": "Verify Post-Remediation Health",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify Post-Remediation Health": {
+      "main": [
+        [
+          {
+            "node": "Notify Slack Incident Channel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
