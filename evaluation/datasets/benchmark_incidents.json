@@ -1,0 +1,66 @@
+[
+  {
+    "id": "bench-01",
+    "name": "Payment API Database Connection Pool Exhaustion",
+    "service": "payment-api",
+    "alert": {
+      "error_rate": 18.4,
+      "latency_ms": 4200.0,
+      "environment": "production",
+      "symptom": "PostgreSQL connection timeout in application queries"
+    },
+    "expected_severity": "P1",
+    "expected_root_cause": "unindexed SQL query join exhausting PostgreSQL connection pool",
+    "expected_action": "rollback_deployment",
+    "expected_risk": "HIGH",
+    "expected_tools": ["search_logs", "get_metrics", "get_deployment", "search_github"]
+  },
+  {
+    "id": "bench-02",
+    "name": "Order Processor Kafka Consumer Rebalance Storm",
+    "service": "order-processor",
+    "alert": {
+      "error_rate": 8.5,
+      "latency_ms": 1200.0,
+      "environment": "production",
+      "symptom": "Kafka consumer group rebalancing repeatedly"
+    },
+    "expected_severity": "P2",
+    "expected_root_cause": "Kafka consumer processing timeout exceeding max poll interval",
+    "expected_action": "restart_service",
+    "expected_risk": "MEDIUM",
+    "expected_tools": ["search_logs", "get_metrics"]
+  },
+  {
+    "id": "bench-03",
+    "name": "Inventory Service Kubernetes OOMKilled Flapping",
+    "service": "inventory-service",
+    "alert": {
+      "error_rate": 12.0,
+      "latency_ms": 2800.0,
+      "environment": "production",
+      "symptom": "Pod crash loops with ExitCode 137"
+    },
+    "expected_severity": "P1",
+    "expected_root_cause": "Memory leak leading to container OOMKilled",
+    "expected_action": "rollback_deployment",
+    "expected_risk": "HIGH",
+    "expected_tools": ["search_logs", "get_metrics", "get_deployment"]
+  },
+  {
+    "id": "bench-04",
+    "name": "Catalog API Redis Cache Eviction Spike",
+    "service": "catalog-api",
+    "alert": {
+      "error_rate": 3.2,
+      "latency_ms": 850.0,
+      "environment": "production",
+      "symptom": "Cache hit ratio drops from 98% to 15%"
+    },
+    "expected_severity": "P3",
+    "expected_root_cause": "Redis memory maxmemory reached triggering aggressive eviction",
+    "expected_action": "restart_service",
+    "expected_risk": "MEDIUM",
+    "expected_tools": ["get_metrics"]
+  }
+]
