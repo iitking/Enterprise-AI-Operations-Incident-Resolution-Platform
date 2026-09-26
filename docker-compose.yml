@@ -1,0 +1,113 @@
+# OpsPilot AI - Enterprise Multi-Container Orchestration
+# Author: Nivesh Kumar Meena
+# Copyright (c) 2026 Nivesh Kumar Meena. All Rights Reserved.
+
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/Dockerfile.backend
+    container_name: opspilot-backend
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - APP_NAME=OpsPilot AI
+      - APP_ENV=production
+      - DATABASE_URL=postgresql://opspilot:opspilot_secret@postgres:5432/opspilot_db
+      - REDIS_URL=redis://redis:6379/0
+      - JWT_SECRET_KEY=opspilot_super_secret_jwt_key_nivesh_kumar_meena_2026
+      - N8N_BASE_URL=http://n8n:5678
+      - N8N_WEBHOOK_INCIDENT_TRIGGER=http://n8n:5678/webhook/incident-trigger
+      - N8N_WEBHOOK_APPROVAL=http://n8n:5678/webhook/approval-decision
+      - N8N_WEBHOOK_REMEDIATION=http://n8n:5678/webhook/execute-remediation
+      - PROMETHEUS_URL=http://prometheus:9090
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - opspilot-network
+
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: opspilot-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: opspilot
+      POSTGRES_PASSWORD: opspilot_secret
+      POSTGRES_DB: opspilot_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U opspilot -d opspilot_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - opspilot-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: opspilot-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - opspilot-network
+
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: opspilot-n8n
+    restart: always
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_BASIC_AUTH_ACTIVE=false
+      - WEBHOOK_URL=http://localhost:5678/
+    volumes:
+      - n8n_data:/home/node/.n8n
+    networks:
+      - opspilot-network
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: opspilot-prometheus
+    restart: always
+    ports:
+      - "9090:9090"
+    volumes:
+      - prometheus_data:/prometheus
+    networks:
+      - opspilot-network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: opspilot-grafana
+    restart: always
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+    networks:
+      - opspilot-network
+
+networks:
+  opspilot-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  n8n_data:
+  prometheus_data:
+  grafana_data:
