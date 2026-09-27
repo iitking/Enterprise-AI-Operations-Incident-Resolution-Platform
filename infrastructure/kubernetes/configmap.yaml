@@ -1,0 +1,38 @@
+# OpsPilot AI - Kubernetes ConfigMap
+# Author: Nivesh Kumar Meena
+# Copyright (c) 2026 Nivesh Kumar Meena. All Rights Reserved.
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: opspilot-config
+  namespace: production
+data:
+  APP_ENV: "production"
+  APP_PORT: "8000"
+  PROJECT_AUTHOR: "Nivesh Kumar Meena"
+  LANGCHAIN_TRACING_V2: "true"
+  LANGCHAIN_PROJECT: "opspilot-ai-production"
+  N8N_BASE_URL: "http://n8n:5678"
+  PROMETHEUS_URL: "http://prometheus:9090"
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: opspilot-ingress
+  namespace: production
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  rules:
+    - host: opspilot.company.internal
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: opspilot-backend-service
+                port:
+                  number: 8000

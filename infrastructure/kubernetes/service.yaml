@@ -1,0 +1,20 @@
+# OpsPilot AI - Kubernetes Service Manifest
+# Author: Nivesh Kumar Meena
+# Copyright (c) 2026 Nivesh Kumar Meena. All Rights Reserved.
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: opspilot-backend-service
+  namespace: production
+  labels:
+    app: opspilot-backend
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8000
+      targetPort: 8000
+      name: http
+      protocol: TCP
+  selector:
+    app: opspilot-backend
