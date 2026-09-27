@@ -1,0 +1,58 @@
+# OpsPilot AI - Kubernetes Deployment Manifest
+# Author: Nivesh Kumar Meena
+# Copyright (c) 2026 Nivesh Kumar Meena. All Rights Reserved.
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: opspilot-backend
+  namespace: production
+  labels:
+    app: opspilot-backend
+    author: nivesh-kumar-meena
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: opspilot-backend
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: opspilot-backend
+    spec:
+      containers:
+        - name: opspilot-backend
+          image: opspilot-ai/backend:v1.0.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+              name: http
+          envFrom:
+            - configMapRef:
+                name: opspilot-config
+            - secretRef:
+                name: opspilot-secrets
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 5
