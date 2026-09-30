@@ -4,7 +4,13 @@ Author: Nivesh Kumar Meena
 Copyright (c) 2026 Nivesh Kumar Meena. All Rights Reserved.
 """
 
+import sys
+import os
 import unittest
+
+# Ensure project root is in sys.path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 from backend.api.incident_routes import simulate_payment_api_incident, list_incidents, ACTIVE_INCIDENTS_STATE
 from backend.api.approval_routes import list_pending_approvals, submit_approval_decision
 from backend.models.schemas import ApprovalDecisionRequest

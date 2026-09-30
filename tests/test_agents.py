@@ -4,7 +4,13 @@ Author: Nivesh Kumar Meena
 Copyright (c) 2026 Nivesh Kumar Meena. All Rights Reserved.
 """
 
+import sys
+import os
 import unittest
+
+# Ensure project root is in sys.path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 from backend.agents.triage import triage_agent
 from backend.agents.logs import logs_agent
 from backend.agents.metrics import metrics_agent

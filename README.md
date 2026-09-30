@@ -348,8 +348,8 @@ The system should never blindly execute high-risk production actions.
                                     │
                                     ▼
                 ╔════════════════════════════════════╗
-                ║             LANGGRAPH             ║
-                ║        Agent Orchestrator         ║
+                ║             LANGGRAPH              ║
+                ║        Agent Orchestrator          ║
                 ║                                    ║
                 ║     ┌────────────────────────┐     ║
                 ║     │ Supervisor / Router    │     ║
@@ -357,15 +357,15 @@ The system should never blindly execute high-risk production actions.
                 ║                  │                 ║
                 ║       ┌──────────┼──────────┐      ║
                 ║       ▼          ▼          ▼      ║
-                ║     Logs       Metrics     Code     ║
-                ║     Agent       Agent      Agent    ║
+                ║     Logs       Metrics     Code    ║
+                ║     Agent       Agent      Agent   ║
                 ║       │          │          │      ║
                 ║       └──────────┼──────────┘      ║
                 ║                  ▼                 ║
-                ║           Root Cause Agent        ║
+                ║           Root Cause Agent         ║
                 ║                  │                 ║
                 ║                  ▼                 ║
-                ║          Risk / Policy Agent      ║
+                ║          Risk / Policy Agent       ║
                 ╚══════════════════╤═════════════════╝
                                    │
                          ┌─────────┴─────────┐
