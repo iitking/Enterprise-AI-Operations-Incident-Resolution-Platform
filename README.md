@@ -2274,23 +2274,41 @@ The final system should demonstrate:
 
 ---
 
-# ⭐ Final Vision
+## 👨‍💻 Author
 
-The final product should feel like an **AI SRE / AI Operations Engineer** working alongside a company's engineering team.
+<div align="center">
 
-Instead of:
+<a href="https://github.com/iitking">
+  <img src="https://github.com/iitking.png" width="110" height="110" style="border-radius:50%" alt="Nivesh Kumar Meena" />
+</a>
 
-> "Here is a chatbot."
+### **Nivesh Kumar Meena**
 
-The product should demonstrate:
+**AI Architect · MLOps Engineer** | B.Tech Electrical Engineering, **IIT Roorkee**
 
-> **"Give OpsPilot an incident, and it investigates the system, gathers evidence, reasons over company knowledge, identifies the probable root cause, evaluates remediation risk, asks for approval when necessary, executes the approved workflow, verifies recovery, updates the team, and records the entire AI decision process for evaluation."**
+*Building agentic AI systems, RAG pipelines and production-ready ML.*
+
+<a href="https://www.linkedin.com/in/nivesh-kumar-meena-a31465221/"><img src="https://img.shields.io/badge/LinkedIn-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn" /></a>
+<a href="https://github.com/iitking"><img src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub" /></a>
+<a href="mailto:niveshkr149@gmail.com"><img src="https://img.shields.io/badge/Email-D14836?style=for-the-badge&logo=gmail&logoColor=white" alt="Email" /></a>
+
+</div>
 
 ---
 
-# 📜 License & Copyright
+## 📜 Copyright & Usage
 
-**Copyright © 2026 Nivesh Kumar Meena. All Rights Reserved.**
+**© 2026 Nivesh Kumar Meena. All Rights Reserved.**
 
-This software and architectural design are created and authored by **Nivesh Kumar Meena**. Licensed under the [MIT License](LICENSE).
+This project, including its source code, architecture and documentation, is the original work of **Nivesh Kumar Meena**.
+
+🚫 You may **not** copy, reproduce, modify, distribute, sublicense, or use this code (in whole or in part) for any personal, academic, or commercial purpose **without prior written permission** from the author.
+
+✅ Viewing the repository for evaluation purposes (for example, by recruiters and hiring managers) is welcome.
+
+📩 **Need permission or want to collaborate?** Contact: [niveshkr149@gmail.com](mailto:niveshkr149@gmail.com)
+
+<div align="center">
+  <sub>⭐ If you found this project interesting, feel free to star it.</sub>
+</div>
 
